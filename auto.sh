@@ -4,6 +4,11 @@ archive_filename=$1
 input_dir="/tmp/website-report-$(date +%s)/"
 output_dir="/tmp/wpscan-api-results-$(date +%s)/"
 
+if [[ $(echo $archive_filename | grep tar) == '' ]]; then
+	echo "Specify .tar file"
+	exit 1
+fi
+
 mkdir $input_dir
 mkdir $output_dir
 tar -xf "$archive_filename" -C $input_dir 
