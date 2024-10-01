@@ -1,19 +1,19 @@
 #!/bin/bash
 
 archive_filename=$1
-output_filename="/tmp/output_results-$(date +%s).json"
-input_dir="/tmp/website-report-$(date +%s)/"
-output_dir="/tmp/wpscan-api-results-$(date +%s)/"
+directory="/var/lib/wp-scripts"
+output_filename="$directory/output_results-$(date +%s).json"
+input_dir="$directory/website-report-$(date +%s)/"
+output_dir="$directory/wpscan-api-results-$(date +%s)/"
 
 if [[ $(echo $archive_filename | grep tar) == '' ]]; then
 	echo "Specify .tar file"
 	exit 1
 fi
-
 mkdir $input_dir
 mkdir $output_dir
 tar -xf "$archive_filename" -C $input_dir 
-input_dir="${input_dir}website_report/"
+input_dir="${input_dir}website_report/success/"
 
 readarray -t file_names < <(ls "$input_dir")
 
@@ -25,8 +25,8 @@ for file_name in ${file_names[@]}; do
 
     input_file="${input_dir}${file_name}"
     output_file="${output_dir}${file_name}"
-    wpscan-api.py $input_file | tee "${output_file}" | head -c 50
-    echo
+    /opt/wpscan-api/wpscan-api.py $input_file > "${output_file}"
+    tail -c 80 "${output_file}"
 done
 
 echo "Creating result file ($output_filename):"
@@ -53,4 +53,4 @@ output_file_content=$(cat "$output_filename")
 echo "$output_file_content" | sed 's/^/[/g' | sed 's/,$/]/g' > $output_filename
 
 echo "Uploading results: "
-dojo-upload.sh -f $output_filename -t "Wpscan API Scan" -p "Casino Website"
+/opt/useful-scripts/dojo-upload.sh -f $output_filename -t "Wpscan API Scan" -p "Casino Website"

@@ -8,7 +8,7 @@ import datetime
 
 base_url="https://wpscan.com/api/v3/"
 api_rotation=1
-data_dir="/tmp/"
+data_dir="/var/lib/wp-scripts/"
 vulnerabilites = []
 
 def wpscan_query(endpoint):

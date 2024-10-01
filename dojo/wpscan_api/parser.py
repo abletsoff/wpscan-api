@@ -19,42 +19,40 @@ class WpscanAPIParser(object):
         return "Wpscan API report file can be imported in JSON format (option --json)."
 
     def get_findings(self, file, test):
-        tree = json.load(file)
+        tree = json.load(file)['vulnerabilities']
         dupes = dict()
-        for element in tree:
-            for node in element['vulnerabilities']:
-                print(node)
-                finding = Finding(test=test)
-                title = f"{node['customer']}_{node['server_type']}_{node['title']}"
-                finding.title = title
+
+        for node in tree:
+            finding = Finding(test=test)
+            title = f"{node['customer']}_{node['server_type']}_{node['title']}"
+            finding.title = title
+            
+            finding.description = node['title']
+            finding.component_name = node['slug']
+            finding.cwe=1395
+            finding.vuln_id_from_tool = node['id']
+            if node['poc'] == None and node['fixed_in'] != None:
+                finding.severity = 'Medium'
+            else: 
+                finding.severity = 'High'
+
+            if node['fixed_in'] != None:
+                pass
                 
-                finding.description = node['title']
-                finding.component_name = node['slug']
-                finding.cwe=1395
-                finding.vuln_id_from_tool = node['id']
-                if node['poc'] == None and node['fixed_in'] != None:
-                    finding.severity = 'Medium'
-                else: 
-                    finding.severity = 'High'
+            finding.url = node['site_url']
+            finding.unsaved_endpoints = list()
 
-                if node['fixed_in'] != None:
-                    pass
-                    
-                finding.url = node['site_url']
-                finding.unsaved_endpoints = list()
-                finding.unsaved_endpoints.append(Endpoint.from_uri(node['site_url']))
+            # internal de-duplication
+            dupe_key = hashlib.sha256(str(finding.title + finding.url).encode('utf-8')).hexdigest()
 
-                # internal de-duplication
-                dupe_key = hashlib.sha256(str(finding.title + finding.url).encode('utf-8')).hexdigest()
-
-                if dupe_key in dupes:
-                    find = dupes[dupe_key]
-                    if finding.description:
-                        find.description += "\n" + finding.description
-                    find.unsaved_endpoints.extend(finding.unsaved_endpoints)
-                    dupes[dupe_key] = find
-                else:
-                    dupes[dupe_key] = finding
+            if dupe_key in dupes:
+                find = dupes[dupe_key]
+                if finding.description:
+                    find.description += "\n" + finding.description
+                find.unsaved_endpoints.extend(finding.unsaved_endpoints)
+                dupes[dupe_key] = find
+            else:
+                dupes[dupe_key] = finding
 
         return list(dupes.values())
 
@@ -68,3 +66,4 @@ class WpscanAPIParser(object):
             return "High"
         else:
             return "Info"
+
