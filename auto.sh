@@ -1,7 +1,8 @@
 #!/bin/bash
-
+debug='false'
+debug='true'
 archive_filename=$1
-directory="/var/lib/wp-scripts"
+directory="/tmp"
 output_filename="$directory/output_results-$(date +%s).json"
 input_dir="$directory/website-report-$(date +%s)/"
 output_dir="$directory/wpscan-api-results-$(date +%s)/"
@@ -25,7 +26,7 @@ for file_name in ${file_names[@]}; do
 
     input_file="${input_dir}${file_name}"
     output_file="${output_dir}${file_name}"
-    /opt/wpscan-api/wpscan-api.py $input_file > "${output_file}"
+    wpscan-api.py $input_file > "${output_file}"
     tail -c 80 "${output_file}"
 done
 
@@ -58,4 +59,10 @@ output_file_content=$(cat "$output_filename")
 echo "$output_file_content" | sed 's/^/[/g' | sed 's/,$/]/g' > $output_filename
 
 echo "Uploading results: "
-/opt/useful-scripts/dojo-upload.sh -f $output_filename -t "Wpscan API Scan" -p "Casino Website"
+dojo-upload.sh -f $output_filename -t "Wpscan API Scan" -p "Diff"
+
+if [[ $debug == 'false' ]]; then
+    rm -r $input_dir
+    rm -r $output_dir
+    rm $output_filename
+fi
